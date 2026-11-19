@@ -1,40 +1,43 @@
-# Costco Checkout Simulator
+# Traffic Flow Simulator
 
-This CSC 311 lab uses the producer–consumer pattern to simulate a Costco checkout line. Customers finish shopping and add their IDs to a shared queue. Cashiers take IDs from the queue and serve customers.
+This CSC 311 project uses the producer–consumer pattern to simulate a four-way intersection. Cars arrive from the north, east, south, and west. Each approach has one incoming lane and one outgoing lane. Cars continue straight through the intersection.
 
-## How to Run
+## Run in IntelliJ IDEA
 
-1. Open the project in IntelliJ IDEA.
-2. Open `src/ex2/CostcoSimulation.java`.
-3. Click the green Run arrow next to `main()`.
-4. Enter the number of customers, number of cashiers, queue capacity, shopping time in milliseconds, and checkout time in milliseconds.
+1. Open the `CSC311_Example_Threads_2` folder in IntelliJ IDEA.
+2. In **File → Project Structure → Project**, select JDK 21 or later if IntelliJ asks for a project SDK.
+3. Open `src/traffic/TrafficSimulation.java` and click the green Run arrow next to `main()`.
 
-The program prints each customer’s wait time, followed by the average and longest waits.
+## Controls
 
-## Main Classes
+| Control | What it does |
+|---|---|
+| N/S green (s), E/W green (s) | Set the green duration for each pair of directions from 3 to 15 seconds. Changing either value starts a new run. |
+| View | Switch between the 3D neighborhood and top-down views during a run. |
+| Signal mode | Choose coordinated signals or unsynchronized signals. Changing mode starts a new run. |
+| Traffic mix | Choose balanced arrivals, 70% north–south, or 70% east–west. Changing the mix starts a new run. |
+| Cars/min | Set the total attempted arrival rate from 15 to 300 cars per minute. |
+| Pause / Resume | Freeze or resume cars, new arrivals, and the signal timer. |
+| Reset | Clear the intersection and counters while keeping the chosen timings, traffic mix, arrival rate, and pause setting. |
+
+In coordinated mode, the signal gives green to north–south traffic and then to east–west traffic. After each green there are two seconds of amber and one second of all-red so cars already moving through the intersection can clear it. Cars waiting at the stop line enter only on green.
+
+**Blocked arrivals** counts attempts that could not enter their assigned lane because it lacked space. **Crossed** counts cars released past the stop line. **Avg. stopped time** reports the mean stationary time of the cars already released.
+
+## How the simulation works
 
 | Class | Responsibility |
 |---|---|
-| `Customer` | Simulates shopping and adds the customer’s ID to the queue. |
-| `CheckoutQueue` | Uses an `ArrayBlockingQueue` to hold customer IDs. Customers wait when the queue is full, and cashiers wait when it is empty. |
-| `Cashier` | Takes customer IDs from the queue, records their wait times, and simulates checkout. |
-| `CostcoSimulation` | Reads the settings, starts the threads, signals cashiers to stop, and prints the results. |
+| `TrafficSimulation` | Starts an arrival worker and a traffic worker, and refreshes the Swing interface with snapshots. |
+| `TrafficModel` | Creates one bounded FIFO `ArrayBlockingQueue` per approach. The arrival worker adds cars, and the traffic worker releases the lead car at a green signal. |
+| `RoadPanel` | Draws the animated intersection, the four signals, and the stopped and crossed totals for each approach. |
 
-## Experiment Results
+## Demonstrate a collision
 
-Each experiment used 20 customers, a shopping time of 100 ms, and a checkout time of 300 ms. Wait time starts when a customer finishes shopping and ends when a cashier takes their ID. It includes time spent waiting for space in the queue.
+Select **Unsynchronized signals**. Each road follows its own timer, so both roads can have green at the same time. A collision is detected when the bodies of two perpendicular cars overlap. The app highlights the impact and freezes the run. Press **Reset** to try again, or choose **Coordinated signals** to compare. Try 300 cars/min with balanced traffic to see the collision sooner.
 
-| Experiment | Customers | Cashiers | Queue capacity | Average wait (ms) | Longest wait (ms) |
-|---|---:|---:|---:|---:|---:|
-| 1. Understaffed | 20 | 1 | 5 | 2,949.36 | 5,906.90 |
-| 2. Three cashiers | 20 | 3 | 5 | 888.55 | 1,872.00 |
-| 3. Overstaffed | 20 | 10 | 5 | 153.83 | 310.79 |
-| 4. Smaller queue | 20 | 3 | 1 | 895.73 | 1,882.92 |
-| 5. Larger queue | 20 | 3 | 10 | 879.10 | 1,860.52 |
+Cars are assigned different preferred speeds when they enter. A faster car slows behind a slower car in the same lane and keeps a safe following gap. Cars travel straight throughout the demonstration.
 
-## Observations and Recommendation
+## Compare signal timings
 
-Increasing staffing from one cashier to three reduced the average wait by about 70%. Ten cashiers reduced the wait further, but required seven additional cashiers. With three cashiers, the average waits for queue capacities of 1, 5, and 10 were within 17 ms of each other in these runs.
-
-For the 20-customer rush we simulated, I would choose three cashiers. This setup reduced the average wait to under one second with fewer cashiers than the ten-cashier setup.
-
+Select **70% N/S**, set the slider to **225 cars/min**, and compare two 60-second runs. Start with **6 s north–south and 6 s east–west**. Then try **9 s north–south and 3 s east–west**. Both settings keep the same 18-second signal cycle. Compare **Avg. stopped time**, **Blocked arrivals**, and the per-approach crossing totals to see how the extra north–south green time affects both roads.
